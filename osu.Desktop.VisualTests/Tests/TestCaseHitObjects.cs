@@ -5,9 +5,14 @@ using osu.Framework;
 using osu.Framework.GameModes.Testing;
 using osu.Framework.Graphics;
 using osu.Framework.Timing;
-using osu.Game.Beatmaps.Objects;
-using osu.Game.Beatmaps.Objects.Osu;
-using osu.Game.Beatmaps.Objects.Osu.Drawable;
+using OpenTK;
+using osu.Framework.Allocation;
+using osu.Game.Modes.Objects;
+using osu.Game.Modes.Objects.Drawables;
+using osu.Game.Modes.Osu.Objects;
+using osu.Game.Modes.Osu.Objects.Drawables;
+using osu.Framework.Graphics.Containers;
+using osu.Game.Modes;
 
 namespace osu.Desktop.VisualTests.Tests
 {
@@ -15,46 +20,45 @@ namespace osu.Desktop.VisualTests.Tests
     {
         public override string Name => @"Hit Objects";
 
-        IFrameBasedClock ourClock;
-
-        protected override IFrameBasedClock Clock => ourClock;
-
-        protected override void Load(BaseGame game)
+        public TestCaseHitObjects()
         {
-            base.Load(game);
-
-            var swClock = new StopwatchClock(true) { Rate = 1 };
-            ourClock = new FramedClock(swClock);
+            var swClock = new StopwatchClock(true) { Rate = 0.2f };
+            Clock = new FramedClock(swClock);
         }
 
         public override void Reset()
         {
             base.Reset();
 
-            ourClock.ProcessFrame();
+            Clock.ProcessFrame();
 
-            for (int i = 0; i < 20; i++)
+            Container approachContainer = new Container { Depth = float.MinValue, };
+
+            Add(approachContainer);
+
+            const int count = 10;
+
+            for (int i = 0; i < count; i++)
             {
-                var h = new Circle
+                var h = new HitCircle
                 {
-                    StartTime = ourClock.CurrentTime + 1000 + i * 80,
-                    Position = new OpenTK.Vector2(i * 14),
+                    StartTime = Clock.CurrentTime + 1000 + i * 80,
+                    Position = new Vector2((i - count / 2) * 14),
                 };
 
-                Add(new DrawableCircle(h)
+                DrawableHitCircle d = new DrawableHitCircle(h)
                 {
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre,
-                    Depth = -i,
-                    State = ArmedState.Armed,
-                });
-            }
-        }
+                    Depth = i,
+                    State = ArmedState.Hit,
+                    Judgement = new OsuJudgementInfo { Result = HitResult.Hit }
+                };
 
-        protected override void Update()
-        {
-            base.Update();
-            ourClock.ProcessFrame();
+
+                approachContainer.Add(d.ApproachCircle.CreateProxy());
+                Add(d);
+            }
         }
     }
 }

@@ -1,8 +1,13 @@
-﻿using osu.Framework.Graphics.Containers;
+﻿//Copyright (c) 2007-2016 ppy Pty Ltd <contact@ppy.sh>.
+//Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu/master/LICENCE
+
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics;
 using osu.Framework.Input;
 using OpenTK;
 using osu.Framework;
+using osu.Framework.Allocation;
+using osu.Framework.Graphics.Transformations;
 
 namespace osu.Game.Graphics.Containers
 {
@@ -15,7 +20,7 @@ namespace osu.Game.Graphics.Containers
         public ParallaxContainer()
         {
             RelativeSizeAxes = Axes.Both;
-            AddInternal(content = new Container()
+            AddInternal(content = new Container
             {
                 RelativeSizeAxes = Axes.Both,
                 Anchor = Anchor.Centre,
@@ -24,24 +29,26 @@ namespace osu.Game.Graphics.Containers
         }
 
         private Container content;
+        private InputManager input;
 
-        protected override Container Content => content;
+        protected override Container<Drawable> Content => content;
 
-        protected override void Load(BaseGame game)
+        [BackgroundDependencyLoader]
+        private void load(UserInputManager input)
         {
-            base.Load(game);
+            this.input = input;
         }
 
-        protected override bool OnMouseMove(InputState state)
-        {
-            content.Position = (state.Mouse.Position - DrawSize / 2) * ParallaxAmount;
-            return base.OnMouseMove(state);
-        }
+        bool firstUpdate = true;
 
         protected override void Update()
         {
             base.Update();
+
+            content.MoveTo((ToLocalSpace(input.CurrentState.Mouse.NativeState.Position) - DrawSize / 2) * ParallaxAmount, firstUpdate ? 0 : 1000, EasingTypes.OutQuint);
             content.Scale = new Vector2(1 + ParallaxAmount);
+
+            firstUpdate = false;
         }
     }
 }

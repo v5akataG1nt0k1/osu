@@ -1,4 +1,7 @@
-﻿using osu.Framework;
+﻿//Copyright (c) 2007-2016 ppy Pty Ltd <contact@ppy.sh>.
+//Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu/master/LICENCE
+
+using osu.Framework;
 using osu.Framework.Configuration;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -13,11 +16,10 @@ namespace osu.Game.Graphics.UserInterface.Volume
     internal class VolumeMeter : Container
     {
         private Box meterFill;
-        private BindableDouble volume;
+        public BindableDouble Bindable { get; private set; } = new BindableDouble();
 
-        public VolumeMeter(string meterName, BindableDouble volume)
+        public VolumeMeter(string meterName)
         {
-            this.volume = volume;
             Size = new Vector2(40, 180);
             Children = new Drawable[]
             {
@@ -42,6 +44,7 @@ namespace osu.Game.Graphics.UserInterface.Volume
                         meterFill = new Box
                         {
                             Colour = Color4.White,
+                            Scale = new Vector2(1, 0),
                             RelativeSizeAxes = Axes.Both,
                             Origin = Anchor.BottomCentre,
                             Anchor = Anchor.BottomCentre
@@ -55,33 +58,28 @@ namespace osu.Game.Graphics.UserInterface.Volume
                     Origin = Anchor.TopCentre
                 }
             };
+
+            Bindable.ValueChanged += delegate { updateFill(); };
         }
 
-        protected override void Load(BaseGame game)
+        protected override void LoadComplete()
         {
-            base.Load(game);
+            base.LoadComplete();
             updateFill();
         }
 
         public double Volume
         {
-            get { return volume.Value; }
+            get { return Bindable.Value; }
             private set
             {
-                volume.Value = value;
-                updateFill();
+                Bindable.Value = value;
             }
         }
 
-        protected override bool OnWheelUp(InputState state)
+        protected override bool OnWheel(InputState state)
         {
-            Volume += 0.05f;
-            return true;
-        }
-
-        protected override bool OnWheelDown(InputState state)
-        {
-            Volume -= 0.05f;
+            Volume += 0.05f * state.Mouse.WheelDelta;
             return true;
         }
 

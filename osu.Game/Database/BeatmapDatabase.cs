@@ -1,4 +1,7 @@
-﻿using System;
+﻿//Copyright (c) 2007-2016 ppy Pty Ltd <contact@ppy.sh>.
+//Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu/master/LICENCE
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -66,7 +69,8 @@ namespace osu.Game.Database
                 using (var reader = ArchiveReader.GetReader(storage, path))
                     metadata = reader.ReadMetadata();
 
-                if (connection.Table<BeatmapSetInfo>().Count(b => b.BeatmapSetID == metadata.BeatmapSetID) != 0)
+                if (metadata.OnlineBeatmapSetID.HasValue &&
+                    connection.Table<BeatmapSetInfo>().Count(b => b.OnlineBeatmapSetID == metadata.OnlineBeatmapSetID) != 0)
                     return; // TODO: Update this beatmap instead
 
                 if (File.Exists(path)) // Not always the case, i.e. for LegacyFilesystemReader
@@ -83,7 +87,7 @@ namespace osu.Game.Database
                 }
                 var beatmapSet = new BeatmapSetInfo
                 {
-                    BeatmapSetID = metadata.BeatmapSetID,
+                    OnlineBeatmapSetID = metadata.OnlineBeatmapSetID,
                     Beatmaps = new List<BeatmapInfo>(),
                     Path = path,
                     Hash = hash,
@@ -95,7 +99,7 @@ namespace osu.Game.Database
                     string[] mapNames = reader.ReadBeatmaps();
                     foreach (var name in mapNames)
                     {
-                        using (var stream = new StreamReader(reader.ReadFile(name)))
+                        using (var stream = new StreamReader(reader.GetStream(name)))
                         {
                             var decoder = BeatmapDecoder.GetDecoder(stream);
                             Beatmap beatmap = decoder.Decode(stream);
@@ -136,25 +140,23 @@ namespace osu.Game.Database
 
         public BeatmapSetInfo GetBeatmapSet(int id)
         {
-            return Query<BeatmapSetInfo>().Where(s => s.BeatmapSetID == id).FirstOrDefault();
+            return Query<BeatmapSetInfo>().FirstOrDefault(s => s.OnlineBeatmapSetID == id);
         }
 
         public WorkingBeatmap GetWorkingBeatmap(BeatmapInfo beatmapInfo, WorkingBeatmap previous = null)
         {
-            var beatmapSetInfo = Query<BeatmapSetInfo>().FirstOrDefault(s => s.BeatmapSetID == beatmapInfo.BeatmapSetID);
+            var beatmapSetInfo = Query<BeatmapSetInfo>().FirstOrDefault(s => s.ID == beatmapInfo.BeatmapSetInfoID);
 
             //we need metadata
             GetChildren(beatmapSetInfo);
 
             if (beatmapSetInfo == null)
-                throw new InvalidOperationException($@"Beatmap set {beatmapInfo.BeatmapSetID} is not in the local database.");
-
-            var reader = GetReader(beatmapSetInfo);
+                throw new InvalidOperationException($@"Beatmap set {beatmapInfo.BeatmapSetInfoID} is not in the local database.");
 
             if (beatmapInfo.Metadata == null)
                 beatmapInfo.Metadata = beatmapSetInfo.Metadata;
 
-            var working = new WorkingBeatmap(beatmapInfo, reader);
+            var working = new WorkingBeatmap(beatmapInfo, beatmapSetInfo, this);
 
             previous?.TransferTo(working);
 
@@ -177,13 +179,13 @@ namespace osu.Game.Database
             return connection.GetWithChildren<T>(id);
         }
 
-        public List<T> GetAllWithChildren<T>(Expression<Func<T, bool>> filter = null,
-            bool recursive = true) where T : class
+        public List<T> GetAllWithChildren<T>(Expression<Func<T, bool>> filter = null, bool recursive = true)
+            where T : class
         {
-            return connection.GetAllWithChildren<T>(filter, recursive);
+            return connection.GetAllWithChildren(filter, recursive);
         }
 
-        public T GetChildren<T>(T item, bool recursive = true)
+        public T GetChildren<T>(T item, bool recursive = false)
         {
             if (item == null) return default(T);
 
@@ -201,7 +203,7 @@ namespace osu.Game.Database
 
         public void Update<T>(T record, bool cascade = true) where T : class
         {
-            if (!validTypes.Any(t => t == typeof(T)))
+            if (validTypes.All(t => t != typeof(T)))
                 throw new ArgumentException(nameof(T), "Must be a type managed by BeatmapDatabase");
             if (cascade)
                 connection.UpdateWithChildren(record);

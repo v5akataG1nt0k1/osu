@@ -7,12 +7,16 @@ using osu.Framework.Graphics;
 using osu.Framework.MathUtils;
 using osu.Framework.Timing;
 using osu.Game.Beatmaps;
-using osu.Game.Beatmaps.Objects;
-using osu.Game.Beatmaps.Objects.Osu;
-using osu.Game.GameModes.Play.Catch;
-using osu.Game.GameModes.Play.Mania;
-using osu.Game.GameModes.Play.Osu;
-using osu.Game.GameModes.Play.Taiko;
+using osu.Game.Modes.Catch;
+using osu.Game.Modes.Catch.UI;
+using osu.Game.Modes.Mania;
+using osu.Game.Modes.Mania.UI;
+using osu.Game.Modes.Objects;
+using osu.Game.Modes.Osu;
+using osu.Game.Modes.Osu.Objects;
+using osu.Game.Modes.Osu.UI;
+using osu.Game.Modes.Taiko;
+using osu.Game.Modes.Taiko.UI;
 using OpenTK;
 
 namespace osu.Desktop.VisualTests.Tests
@@ -23,26 +27,23 @@ namespace osu.Desktop.VisualTests.Tests
 
         public override string Description => @"Showing hitobjects and what not.";
 
-        FramedClock localClock;
-
-        protected override IFrameBasedClock Clock => localClock;
-
         public override void Reset()
         {
             base.Reset();
 
             //ensure we are at offset 0
-            localClock = new FramedClock();
+            Clock = new FramedClock();
 
             List<HitObject> objects = new List<HitObject>();
 
             int time = 500;
             for (int i = 0; i < 100; i++)
             {
-                objects.Add(new Circle()
+                objects.Add(new HitCircle()
                 {
                     StartTime = time,
-                    Position = new Vector2(RNG.Next(0, 512), RNG.Next(0, 384))
+                    Position = new Vector2(RNG.Next(0, 512), RNG.Next(0, 384)),
+                    Scale = RNG.NextSingle(0.5f, 1.0f),
                 });
 
                 time += RNG.Next(50, 500);
@@ -84,12 +85,6 @@ namespace osu.Desktop.VisualTests.Tests
                     Origin = Anchor.BottomRight
                 }
             });
-        }
-
-        protected override void Update()
-        {
-            base.Update();
-            localClock.ProcessFrame();
         }
     }
 }

@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using osu.Framework.Allocation;
 
 namespace osu.Game.Graphics.UserInterface
 {
@@ -41,7 +42,7 @@ namespace osu.Game.Graphics.UserInterface
         /// <summary>
         /// Easing for the counter rollover animation.
         /// </summary>
-        protected virtual EasingTypes RollingEasing => EasingTypes.None;
+        protected virtual EasingTypes RollingEasing => EasingTypes.Out;
 
         private T displayedCount;
 
@@ -56,7 +57,7 @@ namespace osu.Game.Graphics.UserInterface
             }
             protected set
             {
-                if (displayedCount.Equals(value))
+                if (EqualityComparer<T>.Default.Equals(displayedCount, value))
                     return;
                 displayedCount = value;
                 DisplayedCountSpriteText.Text = FormatCount(value);
@@ -117,19 +118,19 @@ namespace osu.Game.Graphics.UserInterface
 
             TextSize = 40;
             AutoSizeAxes = Axes.Both;
-        }
-
-        protected override void Load(BaseGame game)
-        {
-            base.Load(game);
-
-            Flush(false, TransformType);
 
             DisplayedCount = Count;
 
             DisplayedCountSpriteText.Text = FormatCount(count);
-            DisplayedCountSpriteText.Anchor = this.Anchor;
-            DisplayedCountSpriteText.Origin = this.Origin;
+            DisplayedCountSpriteText.Anchor = Anchor;
+            DisplayedCountSpriteText.Origin = Origin;
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            Flush(false, TransformType);
         }
 
         /// <summary>
@@ -211,9 +212,6 @@ namespace osu.Game.Graphics.UserInterface
 
             Flush(false, type);
 
-            if (Clock == null)
-                return;
-
             if (RollingDuration < 1)
             {
                 DisplayedCount = Count;
@@ -225,8 +223,8 @@ namespace osu.Game.Graphics.UserInterface
                     ? GetProportionalDuration(currentValue, newValue)
                     : RollingDuration;
 
-            transform.StartTime = Time;
-            transform.EndTime = Time + rollingTotalDuration;
+            transform.StartTime = Time.Current;
+            transform.EndTime = Time.Current + rollingTotalDuration;
             transform.StartValue = currentValue;
             transform.EndValue = newValue;
             transform.Easing = RollingEasing;

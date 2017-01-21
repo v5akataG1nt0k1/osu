@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using osu.Framework.Allocation;
 
 namespace osu.Game.Graphics.UserInterface
 {
@@ -34,7 +35,7 @@ namespace osu.Game.Graphics.UserInterface
             protected set;
         }
 
-        private double animationDelay => 150;
+        private double animationDelay => 80;
 
         private double scalingDuration => 500;
         private EasingTypes scalingEasing => EasingTypes.OutElasticHalf;
@@ -50,7 +51,7 @@ namespace osu.Game.Graphics.UserInterface
         {
             get
             {
-                double elapsedTime = Time - transformStartTime;
+                double elapsedTime = Time.Current - transformStartTime;
                 double expectedElapsedTime = Math.Abs(prevCount - count) * animationDelay;
                 if (elapsedTime >= expectedElapsedTime)
                     return count;
@@ -70,14 +71,16 @@ namespace osu.Game.Graphics.UserInterface
             {
                 return count;
             }
+
             set
             {
-                prevCount = VisibleValue;
-                count = value;
                 if (IsLoaded)
                 {
-                    transformCount(prevCount, count);
+                    prevCount = VisibleValue;
+                    transformCount(prevCount, value);
                 }
+
+                count = value;
             }
         }
 
@@ -105,11 +108,6 @@ namespace osu.Game.Graphics.UserInterface
                     Origin = Anchor.CentreLeft,
                 }
             };
-        }
-
-        protected override void Load(BaseGame game)
-        {
-            base.Load(game);
 
             starContainer.Width = MaxStars * StarSize + Math.Max(MaxStars - 1, 0) * StarSpacing;
             starContainer.Height = StarSize;
@@ -118,7 +116,7 @@ namespace osu.Game.Graphics.UserInterface
             {
                 TextAwesome star = new TextAwesome
                 {
-                    Icon = FontAwesome.star,
+                    Icon = FontAwesome.fa_star,
                     Anchor = Anchor.CentreLeft,
                     Origin = Anchor.Centre,
                     TextSize = StarSize,
@@ -149,7 +147,7 @@ namespace osu.Game.Graphics.UserInterface
         public void StopAnimation()
         {
             prevCount = count;
-            transformStartTime = Time;
+            transformStartTime = Time.Current;
 
             for (int i = 0; i < MaxStars; i++)
                 transformStarQuick(i, count);
@@ -188,7 +186,7 @@ namespace osu.Game.Graphics.UserInterface
                 transformStar(i, newValue);
                 stars[i].DelayReset();
             }
-            transformStartTime = Time;
+            transformStartTime = Time.Current;
         }
     }
 }

@@ -1,4 +1,7 @@
-﻿using System;
+﻿//Copyright (c) 2007-2016 ppy Pty Ltd <contact@ppy.sh>.
+//Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu/master/LICENCE
+
+using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -33,7 +36,7 @@ namespace osu.Game.Beatmaps.IO
                 .Select(e => e.FileName).ToArray();
             if (beatmaps.Length == 0)
                 throw new FileNotFoundException(@"This directory contains no beatmaps");
-            using (var stream = new StreamReader(ReadFile(beatmaps[0])))
+            using (var stream = new StreamReader(GetStream(beatmaps[0])))
             {
                 var decoder = BeatmapDecoder.GetDecoder(stream);
                 firstMap = decoder.Decode(stream);
@@ -45,7 +48,7 @@ namespace osu.Game.Beatmaps.IO
             return beatmaps;
         }
 
-        public override Stream ReadFile(string name)
+        public override Stream GetStream(string name)
         {
             ZipEntry entry = archive.Entries.SingleOrDefault(e => e.FileName == name);
             if (entry == null)

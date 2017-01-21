@@ -1,13 +1,14 @@
-﻿using System;
-using System.IO;
+﻿//Copyright (c) 2007-2016 ppy Pty Ltd <contact@ppy.sh>.
+//Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu/master/LICENCE
+
 using osu.Framework;
 using osu.Framework.Desktop.Platform;
 using SQLite.Net;
-using SQLite.Net.Platform.Generic;
 using SQLite.Net.Interop;
+using SQLite.Net.Platform.Generic;
 using SQLite.Net.Platform.Win32;
 
-namespace osu.Desktop.Platform
+namespace osu.Desktop.VisualTests.Platform
 {
     public class TestStorage : DesktopStorage
     {

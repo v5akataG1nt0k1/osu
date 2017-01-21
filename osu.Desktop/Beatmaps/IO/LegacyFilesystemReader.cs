@@ -1,4 +1,7 @@
-﻿using System;
+﻿//Copyright (c) 2007-2016 ppy Pty Ltd <contact@ppy.sh>.
+//Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu/master/LICENCE
+
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,11 +17,8 @@ namespace osu.Desktop.Beatmaps.IO
     /// </summary>
     public class LegacyFilesystemReader : ArchiveReader
     {
-        static LegacyFilesystemReader()
-        {
-            AddReader<LegacyFilesystemReader>((storage, path) => Directory.Exists(path));
-        }
-    
+        public static void Register() => AddReader<LegacyFilesystemReader>((storage, path) => Directory.Exists(path));
+
         private string basePath { get; set; }
         private string[] beatmaps { get; set; }
         private Beatmap firstMap { get; set; }
@@ -29,7 +29,7 @@ namespace osu.Desktop.Beatmaps.IO
             beatmaps = Directory.GetFiles(basePath, @"*.osu").Select(f => Path.GetFileName(f)).ToArray();
             if (beatmaps.Length == 0)
                 throw new FileNotFoundException(@"This directory contains no beatmaps");
-            using (var stream = new StreamReader(ReadFile(beatmaps[0])))
+            using (var stream = new StreamReader(GetStream(beatmaps[0])))
             {
                 var decoder = BeatmapDecoder.GetDecoder(stream);
                 firstMap = decoder.Decode(stream);
@@ -41,7 +41,7 @@ namespace osu.Desktop.Beatmaps.IO
             return beatmaps;
         }
 
-        public override Stream ReadFile(string name)
+        public override Stream GetStream(string name)
         {
             return File.OpenRead(Path.Combine(basePath, name));
         }
@@ -50,7 +50,7 @@ namespace osu.Desktop.Beatmaps.IO
         {
             return firstMap.BeatmapInfo.Metadata;
         }
-        
+
         public override void Dispose()
         {
             // no-op

@@ -1,4 +1,7 @@
-﻿using System;
+﻿//Copyright (c) 2007-2016 ppy Pty Ltd <contact@ppy.sh>.
+//Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu/master/LICENCE
+
+using System;
 using System.Collections.Generic;
 using SQLite.Net.Attributes;
 using SQLiteNetExtensions.Attributes;
@@ -7,8 +10,10 @@ namespace osu.Game.Database
 {
     public class BeatmapSetInfo
     {
-        [PrimaryKey]
-        public int BeatmapSetID { get; set; }
+        [PrimaryKey, AutoIncrement]
+        public int ID { get; set; }
+
+        public int? OnlineBeatmapSetID { get; set; } = null;
 
         [OneToOne(CascadeOperations = CascadeOperation.All)]
         public BeatmapMetadata Metadata { get; set; }

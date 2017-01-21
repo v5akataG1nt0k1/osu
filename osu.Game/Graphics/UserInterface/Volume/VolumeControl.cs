@@ -1,4 +1,7 @@
-﻿using System;
+﻿//Copyright (c) 2007-2016 ppy Pty Ltd <contact@ppy.sh>.
+//Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu/master/LICENCE
+
+using System;
 using osu.Framework;
 using osu.Framework.Configuration;
 using osu.Framework.Graphics;
@@ -6,18 +9,15 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Input;
 using osu.Framework.Threading;
 using OpenTK;
+using osu.Framework.Graphics.Primitives;
+using osu.Framework.Audio;
+using osu.Framework.Allocation;
 
 namespace osu.Game.Graphics.UserInterface.Volume
 {
     internal class VolumeControl : OverlayContainer
     {
-        public BindableDouble VolumeGlobal { get; set; }
-        public BindableDouble VolumeSample { get; set; }
-        public BindableDouble VolumeTrack { get; set; }
-
         private VolumeMeter volumeMeterMaster;
-
-        public override bool Contains(Vector2 screenSpacePos) => true;
 
         private void volumeChanged(object sender, EventArgs e)
         {
@@ -30,13 +30,6 @@ namespace osu.Game.Graphics.UserInterface.Volume
             AutoSizeAxes = Axes.Both;
             Anchor = Anchor.BottomRight;
             Origin = Anchor.BottomRight;
-        }
-
-        protected override void Load(BaseGame game)
-        {
-            VolumeGlobal.ValueChanged += volumeChanged;
-            VolumeSample.ValueChanged += volumeChanged;
-            VolumeTrack.ValueChanged += volumeChanged;
 
             Children = new Drawable[]
             {
@@ -45,47 +38,59 @@ namespace osu.Game.Graphics.UserInterface.Volume
                     AutoSizeAxes = Axes.Both,
                     Anchor = Anchor.BottomRight,
                     Origin = Anchor.BottomRight,
-                    Position = new Vector2(10, 30),
-                    Spacing = new Vector2(15,0),
+                    Margin = new MarginPadding { Left = 10, Right = 10, Top = 30, Bottom = 30 },
+                    Spacing = new Vector2(15, 0),
                     Children = new Drawable[]
                     {
-                        volumeMeterMaster = new VolumeMeter("Master", VolumeGlobal),
-                        new VolumeMeter("Effects", VolumeSample),
-                        new VolumeMeter("Music", VolumeTrack)
+                        volumeMeterMaster = new VolumeMeter("Master"),
+                        volumeMeterEffect = new VolumeMeter("Effects"),
+                        volumeMeterMusic = new VolumeMeter("Music")
                     }
                 }
             };
+        }
 
-            base.Load(game);
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            volumeMeterMaster.Bindable.ValueChanged += volumeChanged;
+            volumeMeterEffect.Bindable.ValueChanged += volumeChanged;
+            volumeMeterMusic.Bindable.ValueChanged += volumeChanged;
         }
 
         protected override void Dispose(bool isDisposing)
         {
-            VolumeGlobal.ValueChanged -= volumeChanged;
-            VolumeSample.ValueChanged -= volumeChanged;
-            VolumeTrack.ValueChanged -= volumeChanged;
             base.Dispose(isDisposing);
+
+            volumeMeterMaster.Bindable.ValueChanged -= volumeChanged;
+            volumeMeterEffect.Bindable.ValueChanged -= volumeChanged;
+            volumeMeterMusic.Bindable.ValueChanged -= volumeChanged;
         }
 
-        protected override bool OnWheelDown(InputState state)
+        public void Adjust(InputState state)
         {
             if (!IsVisible)
-                return false;
+            {
+                Show();
+                return;
+            }
 
-            volumeMeterMaster.TriggerWheelDown(state);
-            return true;
+            volumeMeterMaster.TriggerWheel(state);
         }
 
-        protected override bool OnWheelUp(InputState state)
+        [BackgroundDependencyLoader]
+        private void load(AudioManager audio)
         {
-            if (!IsVisible)
-                return false;
-
-            volumeMeterMaster.TriggerWheelUp(state);
-            return true;
+            volumeMeterMaster.Bindable.Weld(audio.Volume);
+            volumeMeterEffect.Bindable.Weld(audio.VolumeSample);
+            volumeMeterMusic.Bindable.Weld(audio.VolumeTrack);
         }
 
         ScheduledDelegate popOutDelegate;
+
+        private VolumeMeter volumeMeterEffect;
+        private VolumeMeter volumeMeterMusic;
 
         protected override void PopIn()
         {

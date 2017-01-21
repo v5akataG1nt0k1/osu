@@ -1,20 +1,18 @@
 //Copyright (c) 2007-2016 ppy Pty Ltd <contact@ppy.sh>.
 //Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu/master/LICENCE
 
-using osu.Framework.GameModes.Testing;
 using System.Collections.Generic;
-using osu.Desktop.Platform;
+using osu.Desktop.VisualTests.Platform;
+using osu.Framework.GameModes.Testing;
 using osu.Game.Database;
-using osu.Game.GameModes.Play;
-using SQLiteNetExtensions.Extensions;
-using osu.Framework;
-using osu.Game;
+using osu.Game.Modes;
+using osu.Game.Screens.Select;
 
-namespace osu.Desktop.Tests
+namespace osu.Desktop.VisualTests.Tests
 {
     class TestCasePlaySongSelect : TestCase
     {
-        private BeatmapDatabase db;
+        private BeatmapDatabase db, oldDb;
         private TestStorage storage;
 
         public override string Name => @"Song Select";
@@ -23,11 +21,12 @@ namespace osu.Desktop.Tests
         public override void Reset()
         {
             base.Reset();
-
+            oldDb = Dependencies.Get<BeatmapDatabase>();
             if (db == null)
             {
                 storage = new TestStorage(@"TestCasePlaySongSelect");
                 db = new BeatmapDatabase(storage);
+                Dependencies.Cache(db, true);
 
                 var sets = new List<BeatmapSetInfo>();
 
@@ -36,20 +35,26 @@ namespace osu.Desktop.Tests
 
                 db.Import(sets);
             }
-
-            Add(new PlaySongSelect(db));
+            Add(new PlaySongSelect());
+        }
+        
+        protected override void Dispose(bool isDisposing)
+        {
+            if (oldDb != null)
+                Dependencies.Cache(oldDb, true);
+            base.Dispose(isDisposing);
         }
 
         private BeatmapSetInfo createTestBeatmapSet(int i)
         {
             return new BeatmapSetInfo
             {
-                BeatmapSetID = 1234 + i,
+                OnlineBeatmapSetID = 1234 + i,
                 Hash = "d8e8fca2dc0f896fd7cb4cb0031ba249",
                 Path = string.Empty,
                 Metadata = new BeatmapMetadata
                 {
-                    BeatmapSetID = 1234 + i,
+                    OnlineBeatmapSetID = 1234 + i,
                     Artist = "MONACA",
                     Title = "Black Song",
                     Author = "Some Guy",
@@ -58,7 +63,7 @@ namespace osu.Desktop.Tests
                 {
                     new BeatmapInfo
                     {
-                        BeatmapID = 1234 + i,
+                        OnlineBeatmapID = 1234 + i,
                         Mode = PlayMode.Osu,
                         Path = "normal.osu",
                         Version = "Normal",
@@ -69,7 +74,7 @@ namespace osu.Desktop.Tests
                     },
                     new BeatmapInfo
                     {
-                        BeatmapID = 1235 + i,
+                        OnlineBeatmapID = 1235 + i,
                         Mode = PlayMode.Osu,
                         Path = "hard.osu",
                         Version = "Hard",
@@ -80,7 +85,7 @@ namespace osu.Desktop.Tests
                     },
                     new BeatmapInfo
                     {
-                        BeatmapID = 1236 + i,
+                        OnlineBeatmapID = 1236 + i,
                         Mode = PlayMode.Osu,
                         Path = "insane.osu",
                         Version = "Insane",

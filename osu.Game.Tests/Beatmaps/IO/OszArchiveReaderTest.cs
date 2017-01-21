@@ -2,7 +2,8 @@
 using System.IO;
 using NUnit.Framework;
 using osu.Game.Beatmaps.IO;
-using osu.Game.GameModes.Play;
+using osu.Game.Modes;
+using osu.Game.Modes.Osu;
 using osu.Game.Tests.Resources;
 
 namespace osu.Game.Tests.Beatmaps.IO
@@ -14,8 +15,9 @@ namespace osu.Game.Tests.Beatmaps.IO
         public void SetUp()
         {
             OszArchiveReader.Register();
+            Ruleset.Register(new OsuRuleset());
         }
-    
+
         [Test]
         public void TestReadBeatmaps()
         {
@@ -50,7 +52,7 @@ namespace osu.Game.Tests.Beatmaps.IO
             {
                 var reader = new OszArchiveReader(osz);
                 var meta = reader.ReadMetadata();
-                Assert.AreEqual(241526, meta.BeatmapSetID);
+                Assert.AreEqual(241526, meta.OnlineBeatmapSetID);
                 Assert.AreEqual("Soleily", meta.Artist);
                 Assert.AreEqual("Soleily", meta.ArtistUnicode);
                 Assert.AreEqual("03. Renatus - Soleily 192kbps.mp3", meta.AudioFile);
@@ -63,14 +65,15 @@ namespace osu.Game.Tests.Beatmaps.IO
                 Assert.AreEqual("Renatus", meta.TitleUnicode);
             }
         }
-        [Test]
+
+        [Test]
         public void TestReadFile()
         {
             using (var osz = Resource.OpenResource("Beatmaps.241526 Soleily - Renatus.osz"))
             {
                 var reader = new OszArchiveReader(osz);
                 using (var stream = new StreamReader(
-                    reader.ReadFile("Soleily - Renatus (Deif) [Platter].osu")))
+                    reader.GetStream("Soleily - Renatus (Deif) [Platter].osu")))
                 {
                     Assert.AreEqual("osu file format v13", stream.ReadLine().Trim());
                 }

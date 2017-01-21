@@ -1,19 +1,23 @@
-﻿using System;
+﻿//Copyright (c) 2007-2016 ppy Pty Ltd <contact@ppy.sh>.
+//Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu/master/LICENCE
+
+using System;
 using System.Collections.Generic;
 using System.IO;
+using osu.Framework.IO.Stores;
 using osu.Framework.Platform;
 using osu.Game.Database;
 
 namespace osu.Game.Beatmaps.IO
 {
-    public abstract class ArchiveReader : IDisposable
+    public abstract class ArchiveReader : IDisposable, IResourceStore<byte[]>
     {
         private class Reader
         {
             public Func<BasicStorage, string, bool> Test { get; set; }
             public Type Type { get; set; }
         }
-    
+
         private static List<Reader> readers { get; } = new List<Reader>();
     
         public static ArchiveReader GetReader(BasicStorage storage, string path)
@@ -42,8 +46,23 @@ namespace osu.Game.Beatmaps.IO
         /// <summary>
         /// Opens a stream for reading a specific file from this archive.
         /// </summary>
-        public abstract Stream ReadFile(string name);
+        public abstract Stream GetStream(string name);
 
         public abstract void Dispose();
+
+        public virtual byte[] Get(string name)
+        {
+            using (Stream input = GetStream(name))
+            {
+                if (input == null)
+                    return null;
+
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    input.CopyTo(ms);
+                    return ms.ToArray();
+                }
+            }
+        }
     }
 }
